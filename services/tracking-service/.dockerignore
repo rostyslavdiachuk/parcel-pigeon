@@ -1,5 +1,0 @@
-Dockerfile
-.dockerignore
-*_test.go
-.golangci.yml
-README.md

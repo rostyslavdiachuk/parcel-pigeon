@@ -24,3 +24,8 @@ build/
 # misc
 .DS_Store
 *.log
+.claude/scheduled_tasks.lock
+
+# instructor's private cheat sheet for the containerisation live-coding session
+# (companion to this branch — never commit it)
+DOCKER-RESTORE-CHEATSHEET.md
