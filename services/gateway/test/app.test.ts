@@ -12,7 +12,7 @@ async function startStubs(): Promise<{ url: string; stop: () => Promise<void>; h
     hits.push(`${req.method} ${req.url}`);
     if (req.url === '/healthz') return { status: 'ok' };
     if (req.url.startsWith('/shipments')) return { proxied: 'shipments', url: req.url };
-    if (req.url.startsWith('/track')) return { proxied: 'tracking', url: req.url };
+    if (req.url.startsWith('/track')) return { proxied: 'tracking12121212', url: req.url };
     if (req.url.startsWith('/notifications')) return [{ to: 'ada@example.com' }];
     return { ok: true };
   });
