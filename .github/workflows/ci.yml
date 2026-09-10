@@ -139,3 +139,7 @@ jobs:
               docker tag "local/${{ matrix.service }}:${{ github.sha }}" "${image}:latest"
               docker push "${image}:latest"
             fi
+##
+#
+#
+#
