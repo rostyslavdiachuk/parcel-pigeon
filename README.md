@@ -39,7 +39,7 @@ Browser ──▶ web (React/TS, Nginx)
 
 | Component          | Language / stack            | Port  | Role |
 |--------------------|-----------------------------|-------|------|
-| `web`              | React + TypeScript + Vite   | 8080  | Track page + operations dashboard |
+| `web`              | React + TypeScript + Vite   | 5173  | Track page + operations dashboard (Vite dev server; Nginx on :8080 on `main`) |
 | `gateway`          | Node + TypeScript + Fastify | 8000  | Edge: routing, stub `x-api-key` auth, `/metrics` |
 | `shipments-service`| Python + FastAPI + SQLAlchemy| 8001 | Write side: shipments, scans, state machine, event publishing |
 | `tracking-service` | Go + chi                    | 8002  | Read side: RabbitMQ consumer → Redis projection, delivery emails |
@@ -51,40 +51,50 @@ Browser ──▶ web (React/TS, Nginx)
 Every service also exposes `/healthz`, `/readyz`, and Prometheus `/metrics`
 (there is no Prometheus container yet — that arrives in a later phase).
 
+> **This branch (`local-no-docker`)** ships no app Dockerfiles. Only the
+> datastores run in Docker; the four services run natively on the host. Writing
+> the per-service Dockerfiles and the full app `docker-compose.yml` is the
+> Containerisation lecture exercise — `git diff main` shows the reference
+> implementation. The web app is served by Vite on **:5173** here (not Nginx on
+> :8080), and `shipments-service` runs on **:8001** directly.
+
 ## Requirements
 
-- Docker + Docker Compose (`docker compose` plugin **or** standalone `docker-compose`)
-- Bash, `curl` (for the helper scripts)
-
-Nothing else — every language toolchain runs inside a container.
+- Docker + Docker Compose — for the datastores only
+- Python ≥ 3.12, Node.js ≥ 20 (22 recommended), Go ≥ 1.22 — for the services
+- Bash, `curl`, `jq` (for the helper scripts)
 
 ## Quick start
 
 ```bash
-./scripts/dev.sh up        # build images, start everything, migrate, seed, wait
+./scripts/dev.sh up        # start postgres / redis / rabbitmq / mailhog
 ```
 
-Then open:
+then start each service natively — full step-by-step in
+**[docs/running-locally.md](docs/running-locally.md)**:
 
-- **http://localhost:8080** — the web app (try tracking `PP-DEMO0001`)
-- http://localhost:8000/healthz — gateway
-- http://localhost:8001/docs — shipments-service OpenAPI
-- http://localhost:15672 — RabbitMQ (guest / guest)
-- http://localhost:8025 — MailHog (you should see a "Parcel PP-DEMO0001 delivered" email)
+| Service | Command (from its directory) | URL |
+|---------|------------------------------|-----|
+| shipments-service | `alembic upgrade head && python -m app.seed && uvicorn app.main:app --port 8001 --reload` | http://localhost:8001/docs |
+| tracking-service | `go run ./cmd/tracking` | http://localhost:8002/healthz |
+| gateway | `npm run dev` | http://localhost:8000/healthz |
+| web | `npm run dev` | **http://localhost:5173** (try tracking `PP-DEMO0001`) |
+
+Datastore UIs: http://localhost:15672 (RabbitMQ, guest / guest),
+http://localhost:8025 (MailHog).
 
 ### `scripts/dev.sh` commands
 
 | Command | What it does |
 |---------|--------------|
-| `up` | `docker compose up -d --build`, run migrations, seed demo data, wait for readiness |
-| `down` | Stop containers (keep volumes) |
-| `reset` | Stop, delete volumes, rebuild with `--no-cache`, start again |
+| `up` | `docker compose up -d` (datastores), wait for Postgres |
+| `down` | Stop datastores (keep volumes) |
+| `reset` | Stop datastores, delete volumes |
+| `migrate` | `alembic upgrade head` for shipments-service |
 | `seed [--force]` | (Re)load the demo shipments |
-| `test [--e2e]` | Run every service's test suite in a container; `--e2e` also runs the smoke test |
 | `smoke` | End-to-end check: create → scan → track → assert MailHog got the email |
-| `lint` | Run ruff / go vet+gofmt / eslint+prettier for all services |
-| `logs [svc]` | Tail logs |
-| `ps` | Container status |
+| `logs [svc]` | Tail datastore logs |
+| `ps` | Datastore container status |
 
 ## Try the flow by hand
 
@@ -117,10 +127,11 @@ services/
   tracking-service/   Go, RabbitMQ consumer + HTTP read API, go test
 web/                  React + TypeScript + Vite, Vitest
 scripts/
-  dev.sh              orchestrator
+  dev.sh              datastore orchestrator (+ migrate / seed / smoke)
   wait-for.sh         HTTP readiness poller
   smoke.sh            end-to-end test
 docs/
+  running-locally.md  step-by-step: start every service natively
   architecture.md     how the pieces fit and why
   api.md              endpoint reference
   lecture-map.md      which DevOps topic to demo where (fills in over phases)

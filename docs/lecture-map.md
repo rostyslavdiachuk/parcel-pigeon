@@ -6,6 +6,12 @@ the later phases live during the lectures — that is the point of the sandbox.
 
 ## Available now (Phase 1)
 
+> On the `local-no-docker` branch the two rows below are the **live-coding
+> exercise**: only the datastores are containerised (`docker-compose.yml`), the
+> services run natively (`docs/running-locally.md`), and you write the four
+> Dockerfiles + the full compose in front of the class. `git diff main` is the
+> reference / answer key.
+
 | Topic | Where / how |
 |-------|-------------|
 | **Containerisation** | One `Dockerfile` per service. Three patterns to contrast: Python multi-stage with `--prefix` install (`services/shipments-service`), Go multi-stage → `distroless/static:nonroot` (`services/tracking-service`), Node build stage → prod-deps-only runtime (`services/gateway`), static build → Nginx (`web`). |

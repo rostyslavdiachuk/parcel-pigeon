@@ -1,7 +1,13 @@
 name: parcelpigeon
 
+# ---------------------------------------------------------------------------
+# Datastores only. On the `local-no-docker` branch the four app services run
+# natively on the host (see docs/running-locally.md). The per-service
+# Dockerfiles and the full app compose file are written live during the
+# Containerisation lecture — diff this branch against `main` for the reference.
+# ---------------------------------------------------------------------------
+
 services:
-  # ---------------------------------------------------------------- infra ----
   postgres:
     image: postgres:16-alpine
     environment:
@@ -50,9 +56,8 @@ services:
       - "1025:1025"
       - "8025:8025"
 
-  # ------------------------------------------------------------- services ----
   shipments-service:
-    build: ./services/shipments-service
+    build: ./service/shipment-service
     environment:
       SHIPMENTS_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-parcelpigeon}:${POSTGRES_PASSWORD:-parcelpigeon}@postgres:5432/${POSTGRES_DB:-shipments}
       SHIPMENTS_RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
@@ -122,7 +127,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-
 volumes:
   pgdata:
   redisdata:
