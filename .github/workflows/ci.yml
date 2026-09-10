@@ -30,3 +30,20 @@ jobs:
       - run: npm run lint
       - run: npm run test
       - run: npm run build
+  shipments-service:
+      name: lint+test / shipments-service
+      runs-on: ubuntu-latest
+      defaults:
+        run:
+          working-directory: services/shipments-service
+      steps:
+        - uses: actions/checkout@v7
+        - uses: actions/setup-python@v7
+          with:
+            python-version: "3.12"
+            cache: pip
+            cache-dependency-path: services/shipments-service/pyproject.toml
+
+        - run: pip install -e ".[dev]"
+        - run: ruff check .
+        - run: pytest
